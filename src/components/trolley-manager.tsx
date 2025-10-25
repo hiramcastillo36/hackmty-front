@@ -105,14 +105,22 @@ export default function TrolleyManager() {
   const handleSlotClick = (slotId: number) => {
     if (!currentProduct || animatingSlot || showErrorOverlay) return
     const slot = slots.find((s) => s.id === slotId)
-    if (!slot || slot.status !== "empty") return
+    if (!slot || currentProduct.placed >= currentProduct.quantity) return
 
-    const isCorrect = currentProduct.correctSlot === slotId
-    if (!isCorrect) {
+    const isCorrectPlacement = currentProduct.correctSlot === slotId
+
+    if (slot.status === "empty") {
+      if (!isCorrectPlacement) {
+        setShowErrorOverlay(true)
+        setTimeout(() => setShowErrorOverlay(false), 1500)
+      }
+      handleProductPlaced(slotId, isCorrectPlacement)
+    } else if (slot.productId === currentProduct.id) {
+      handleProductPlaced(slotId, slot.status === "correct")
+    } else {
       setShowErrorOverlay(true)
       setTimeout(() => setShowErrorOverlay(false), 1500)
     }
-    handleProductPlaced(slotId, isCorrect)
   }
 
   const handleReset = () => {
@@ -197,41 +205,20 @@ export default function TrolleyManager() {
         </div>
       </Card>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6">
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Circle className="w-4 h-4 text-[var(--empty)]" />
-            <span className="text-xs font-medium text-muted-foreground">Vacíos</span>
-          </div>
-          <p className="text-2xl font-bold">{slots.filter((s) => s.status === "empty").length}</p>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <CheckCircle2 className="w-4 h-4 text-[var(--correct)]" />
-            <span className="text-xs font-medium text-muted-foreground">Correctos</span>
-          </div>
-          <p className="text-2xl font-bold text-[var(--correct)]">{correctSlots}</p>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <XCircle className="w-4 h-4 text-[var(--incorrect)]" />
-            <span className="text-xs font-medium text-muted-foreground">Incorrectos</span>
-          </div>
-          <p className="text-2xl font-bold text-[var(--incorrect)]">{incorrectSlots}</p>
-        </Card>
-      </div>
+      {/* Current Product to Place */}
+      <Card className="mb-6 p-6 flex flex-col items-center justify-center text-center">
+        <span className="text-7xl md:text-9xl">{currentProduct?.emoji}</span>
+        <h2 className="mt-4 text-2xl md:text-3xl font-bold text-foreground">{currentProduct?.name}</h2>
+        <p className="text-sm text-muted-foreground">Coloca este producto en su lugar correcto.</p>
+      </Card>
 
       {/* Main Content */}
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Current Product Display */}
         <div className="lg:col-span-1">
           <CurrentProductDisplay
-            currentProduct={currentProduct}
-            currentIndex={currentProductIndex}
-            totalProducts={totalProducts}
+            products={products}
+            currentProductIndex={currentProductIndex}
             onReset={handleReset}
           />
         </div>
