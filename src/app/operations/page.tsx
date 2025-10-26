@@ -1,57 +1,26 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
 import type { ReactNode } from "react"
 import { ClipboardList, Martini, Plane } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { TopBar } from "@/components/top-bar"
-
-interface OperationInfo {
-  airline: string
-  flight: string
-}
-
-const DEFAULT_OPERATION: OperationInfo = { airline: "AEROLINEA", flight: "" }
-const STORAGE_KEY = "gate-operation"
+import { useOperationInfo } from "@/hooks/use-operation-info"
 
 export default function OperationsPage() {
-  const searchParams = useSearchParams()
-  const [operation, setOperation] = useState<OperationInfo>(DEFAULT_OPERATION)
-
-  useEffect(() => {
-    const airlineParam = searchParams.get("airline")
-    const flightParam = searchParams.get("flight")
-
-    if (airlineParam || flightParam) {
-      const nextOperation: OperationInfo = {
-        airline: formatLabel(airlineParam) ?? DEFAULT_OPERATION.airline,
-        flight: formatFlight(flightParam),
-      }
-      setOperation(nextOperation)
-      persistOperation(nextOperation)
-      return
-    }
-
-    const saved = readStoredOperation()
-    if (saved) {
-      setOperation(saved)
-    }
-  }, [searchParams])
-
-  const operationLabel = useMemo(() => {
-    return operation.flight ? `${operation.airline} ${operation.flight}` : operation.airline
-  }, [operation])
+  const { operationLabel } = useOperationInfo()
 
   return (
     <main className="min-h-screen bg-[#f5f7ff] text-slate-900">
       <TopBar
         tag="Gateway Actions"
         rightSlot={
-          <div className="flex items-center gap-2 rounded-full border border-slate-200 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-            <Plane className="h-4 w-4 text-[#0032a0]" />
-            {operationLabel}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-full border border-slate-200 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+              <Plane className="h-4 w-4 text-[#0032a0]" />
+              {operationLabel}
+            </div>
+            <span className="text-xs font-medium uppercase tracking-[0.3em] text-slate-500">Israel</span>
           </div>
         }
       />
@@ -66,18 +35,18 @@ export default function OperationsPage() {
 
         <div className="grid gap-10 md:grid-cols-2">
           <ActionCard
-            title="Registrar inventario de trolleys"
+            title="Acomodo de trolleys"
             description="Captura y monitorea el llenado completo del trolley antes del abordaje."
             href="/trolley"
             icon={<ClipboardList className="h-7 w-7 text-[#0032a0]" />}
             cta="Ir a Trolley"
           />
           <ActionCard
-            title="Manejar bebidas alcoholicas"
+            title="Manejo de licores"
             description="Controla inventario especial, permisos y checklists asociados a alcohol."
             href="/alcohol"
             icon={<Martini className="h-7 w-7 text-[#0032a0]" />}
-            cta="Abrir módulo"
+            cta="Ir a Licores"
           />
         </div>
       </section>
@@ -98,7 +67,6 @@ function ActionCard({ title, description, href, icon, cta }: ActionCardProps) {
     <div className="flex min-h-[360px] flex-col gap-5 rounded-[40px] border border-slate-200 bg-white/95 p-10 shadow-[0_35px_120px_rgba(0,0,0,0.12)]">
       <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.4em] text-slate-400">
         {icon}
-        Accion
       </div>
       <h2 className="text-3xl font-semibold text-slate-900">{title}</h2>
       <p className="flex-1 text-base text-slate-500">{description}</p>
@@ -110,38 +78,4 @@ function ActionCard({ title, description, href, icon, cta }: ActionCardProps) {
       </Button>
     </div>
   )
-}
-
-function formatLabel(value?: string | null) {
-  const cleaned = value?.trim()
-  return cleaned && cleaned.length > 0 ? cleaned : undefined
-}
-
-function formatFlight(value?: string | null) {
-  const cleaned = value?.trim().toUpperCase()
-  return cleaned && cleaned.length > 0 ? cleaned : ""
-}
-
-function persistOperation(operation: OperationInfo) {
-  if (typeof window === "undefined") return
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(operation))
-  } catch {
-    // ignore storage errors
-  }
-}
-
-function readStoredOperation(): OperationInfo | null {
-  if (typeof window === "undefined") return null
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as OperationInfo
-    return {
-      airline: parsed.airline || DEFAULT_OPERATION.airline,
-      flight: parsed.flight || "",
-    }
-  } catch {
-    return null
-  }
 }

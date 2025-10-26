@@ -7,7 +7,7 @@ import { Plane, ShieldCheck, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { TopBar } from "@/components/top-bar"
 
-const airlines = ["GateGroup Demo", "AeroMexico", "Volaris", "VivaAerobus", "Interjet", "Aeromar", "Magnicharters"]
+const airlines = ["AeroMexico", "Volaris", "VivaAerobus", "Interjet", "Aeromar", "Magnicharters"]
 const STORAGE_KEY = "gate-operation"
 
 export default function IngresoPage() {

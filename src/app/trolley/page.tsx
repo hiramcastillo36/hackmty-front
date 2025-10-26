@@ -1,9 +1,11 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { Plane } from "lucide-react"
 import TrolleyManager from "@/components/trolley-manager"
 import { TopBar } from "@/components/top-bar"
 import { Badge } from "@/components/ui/badge"
+import { useOperationInfo } from "@/hooks/use-operation-info"
 
 const cabins = [
   { name: "Cabina Turista", code: "Y", description: "Cobertura total de pasajeros" },
@@ -19,6 +21,7 @@ export default function TrolleyPage() {
   const [cabinIndex, setCabinIndex] = useState(0)
   const [trolleyNumber, setTrolleyNumber] = useState(1)
   const [trayNumber, setTrayNumber] = useState(1)
+  const { operationLabel } = useOperationInfo()
 
   const currentCabin = cabins[cabinIndex]
   const selectionKey = useMemo(
@@ -46,7 +49,18 @@ export default function TrolleyPage() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <TopBar tag="Trolley Manager" />
+      <TopBar
+        tag="Trolley Manager"
+        rightSlot={
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-full border border-slate-200 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+              <Plane className="h-4 w-4 text-[#0032a0]" />
+              {operationLabel}
+            </div>
+            <span className="text-xs font-medium uppercase tracking-[0.3em] text-slate-500">Israel</span>
+          </div>
+        }
+      />
 
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8">
         <section className="rounded-3xl border border-border bg-card/70 p-6 shadow-[0_30px_120px_rgba(0,0,0,0.08)]">
