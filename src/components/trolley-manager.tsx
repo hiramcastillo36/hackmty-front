@@ -47,6 +47,8 @@ export default function TrolleyManager({ trolleyId }: TrolleyManagerProps) {
         }, 500)
       }
     }
+    else
+      reproducirVoz("El producto no va ahí, colócalo en el estante de bebidas, por favor.");
   }
 
   useEffect(() => {
@@ -131,4 +133,23 @@ export default function TrolleyManager({ trolleyId }: TrolleyManagerProps) {
       )}
     </Card>
   )
+
+  async function reproducirVoz(texto) {
+    try {
+      const res = await fetch("/api/voz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: texto }),
+      });
+
+      if (!res.ok) throw new Error("Error al generar voz");
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.play();
+    } catch (err) {
+      console.error(err);
+    }
+  }
 }
