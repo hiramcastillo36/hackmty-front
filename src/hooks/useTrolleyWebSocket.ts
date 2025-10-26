@@ -64,17 +64,63 @@ export function useTrolleyWebSocket(
         try {
           const message = JSON.parse(event.data);
           console.log('📨 Mensaje recibido:', message.type);
+          console.log('📦 Mensaje completo:', message);
 
           if (message.type === 'qr_data_created' && message.data) {
-            const qrData = message.data as QRDataV1;
-            console.log('🎫 QR Data recibido del WebSocket:', {
+            let qrData = message.data as any;
+            console.log('🎫 QR Data recibido del WebSocket (crudo):', qrData);
+
+            // Mostrar TODOS los campos disponibles
+            console.log('📋 Campos disponibles en qrData:');
+            console.log(Object.keys(qrData));
+            for (const key in qrData) {
+              console.log(`  ${key}:`, qrData[key]);
+            }
+
+            // El servidor usa drawer_id, necesitamos convertirlo a trolley_id
+            // drawer_id es el identificador del drawer/trolley
+            if (!qrData.trolley_ids || (Array.isArray(qrData.trolley_ids) && qrData.trolley_ids.length === 0)) {
+              console.warn('⚠️ trolley_ids está vacío o undefined, intentando obtener de drawer_id...');
+
+              // Opción 1: drawer_id es el trolley_id
+              if (qrData.drawer_id) {
+                console.log('✅ Usando drawer_id como trolley_id');
+                // Intentar convertir drawer_id a número si es string
+                const trolleyId = parseInt(qrData.drawer_id, 10);
+                if (!isNaN(trolleyId)) {
+                  qrData.trolley_ids = [trolleyId];
+                } else {
+                  // Si no es un número, usar como string (algunos sistemas pueden tener IDs alfanuméricos)
+                  qrData.trolley_ids = [qrData.drawer_id];
+                }
+              }
+              // Opción 2: Si vienen en el campo trolleys como objetos
+              else if (qrData.trolleys && Array.isArray(qrData.trolleys) && qrData.trolleys.length > 0) {
+                console.log('✅ Extrayendo IDs de field "trolleys"');
+                qrData.trolley_ids = qrData.trolleys.map((t: any) => t.id);
+              }
+              // Opción 3: Si falta, crear un array vacío para evitar errores
+              else {
+                console.error('❌ No se encontraron trolley IDs en ningún campo');
+                qrData.trolley_ids = [];
+              }
+            }
+
+            console.log('🎫 QR Data normalizado:', {
               flight: qrData.flight_number,
               customer: qrData.customer_name,
               drawer: qrData.drawer_id,
               trolleys: qrData.trolley_ids,
             });
+            console.log('📋 QR Data completo:', qrData);
 
-            setLastQRData(qrData);
+            // Crear un nuevo objeto para asegurar que React detecte el cambio
+            const newQRData: QRDataV1 = {
+              ...qrData,
+            };
+
+            console.log('✅ newQRData a enviar:', newQRData);
+            setLastQRData(newQRData);
 
             // Llamar al callback si está registrado
             if (qrDataCallbackRef.current) {

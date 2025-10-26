@@ -5,102 +5,25 @@ import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { CheckCircle2, XCircle, Loader, AlertTriangle } from "lucide-react"
 import Image from "next/image";
+import { useTrolleyProducts, type Product } from "@/hooks/useTrolleyProducts"
 
-// --- Interfaces para la Simulación ---
-export interface Product {
-  id: string
-  name: string
-  correctSlot: number
-  quantity: number
-  placed: number
-  imageUrl: string
-  category: string
+interface TrolleyManagerProps {
+  trolleyId: number | string
 }
 
-// --- Interfaces para la API ---
-interface ApiItem {
-  id: number
-  name: string
-  quantity: number
-  category: string
-  image: string
-}
-
-interface ApiLevel {
-  level_number: number
-  items: ApiItem[]
-}
-
-interface ApiTrolley {
-  id: number
-  name: string
-  levels: ApiLevel[]
-}
-
-// --- Lógica del Componente ---
-
-const getEmojiForCategory = (category: string): string => {
-  const cat = category.toLowerCase()
-  if (cat.includes("bebida")) return "🥤"
-  if (cat.includes("caliente")) return "☕"
-  if (cat.includes("snack")) return "🍟"
-  if (cat.includes("utensilio")) return "🍴"
-  return "📦"
-}
-
-export default function TrolleyManager() {
-  const [products, setProducts] = useState<Product[]>([])
+export default function TrolleyManager({ trolleyId }: TrolleyManagerProps) {
+  const { products, loading, error, updateProductPlaced, resetProducts } = useTrolleyProducts(trolleyId)
   const [currentProductIndex, setCurrentProductIndex] = useState(0)
   const [placementStatus, setPlacementStatus] = useState<"correct" | "incorrect" | null>(null)
   const [isComplete, setIsComplete] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  const TROLLEY_ID = 1
-  const API_URL = "http://172.191.94.124:8000/api"
-
+  // Resetear estado cuando cambia el trolleyId
   useEffect(() => {
-    const fetchTrolleyData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        console.log('Iniciando fetch a:', `${API_URL}/trolleys/${TROLLEY_ID}/`)
-
-        const response = await fetch(`${API_URL}/trolleys/${TROLLEY_ID}/`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
-        })
-
-        console.log('Respuesta recibida:', response.status, response.statusText)
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status} ${response.statusText}`)
-        }
-        const data: ApiTrolley = await response.json()
-
-        const flattenedProducts: Product[] = data.levels.flatMap((level) =>
-          level.items.map((item) => ({
-            id: item.id.toString(),
-            name: item.name,
-            quantity: item.quantity,
-            category: item.category,
-            correctSlot: level.level_number,
-            placed: 0,
-            imageUrl: item.image,
-          }))
-        )
-
-        setProducts(flattenedProducts)
-      } catch (e: any) {
-        setError(e.message || "No se pudo conectar con la API.")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchTrolleyData()
-  }, [])
+    console.log('🔄 TrolleyManager - trolleyId cambió a:', trolleyId);
+    setCurrentProductIndex(0)
+    setPlacementStatus(null)
+    setIsComplete(false)
+  }, [trolleyId])
 
   const currentProduct = products[currentProductIndex]
 
@@ -112,11 +35,9 @@ export default function TrolleyManager() {
 
     if (isCorrect) {
       const newPlaced = currentProduct.placed + 1
-      const newProducts = products.map((p) => (p.id === currentProduct.id ? { ...p, placed: newPlaced } : p))
-      const updatedProduct = newProducts.find((p) => p.id === currentProduct.id)
-      setProducts(newProducts)
+      updateProductPlaced(currentProduct.id, newPlaced)
 
-      if (updatedProduct && updatedProduct.placed >= updatedProduct.quantity) {
+      if (newPlaced >= currentProduct.quantity) {
         setTimeout(() => {
           if (currentProductIndex < products.length - 1) {
             setCurrentProductIndex(currentProductIndex + 1)
@@ -135,10 +56,10 @@ export default function TrolleyManager() {
     }
     window.addEventListener("keydown", handleKeyPress)
     return () => window.removeEventListener("keydown", handleKeyPress)
-  }, [currentProduct, isComplete, placementStatus])
+  }, [currentProduct, isComplete, placementStatus, products.length, currentProductIndex])
 
   const handleReset = () => {
-    setProducts(products.map((p) => ({ ...p, placed: 0 })))
+    resetProducts()
     setCurrentProductIndex(0)
     setIsComplete(false)
   }
@@ -191,7 +112,7 @@ export default function TrolleyManager() {
         placementStatus === "correct" ? <CheckCircle2 size={192} /> : <XCircle size={192} />
       ) : (
         <>
-                    <Image
+          <Image
             alt={currentProduct?.name || 'Product Image'}
             src={currentProduct?.imageUrl}
             width={256}
