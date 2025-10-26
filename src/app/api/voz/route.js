@@ -18,7 +18,7 @@ export async function POST(req) {
       process.env.ELEVENLABS_VOICE_ID,
       {
         text,
-        model_id: "eleven_multilingual_v2", // soporta español, inglés, etc.
+        model_id: "eleven_multilingual_v2",
         voice_settings: {
           stability: 0.4,
           similarity_boost: 0.8,
@@ -26,8 +26,12 @@ export async function POST(req) {
       }
     );
 
-    // ElevenLabs devuelve un stream de audio (Uint8Array)
-    const buffer = Buffer.from(await audio.arrayBuffer());
+    // ElevenLabs devuelve un stream de audio, que se procesa en chunks
+    const chunks = [];
+    for await (const chunk of audio) {
+      chunks.push(chunk);
+    }
+    const buffer = Buffer.concat(chunks);
 
     return new Response(buffer, {
       headers: {
