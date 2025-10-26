@@ -134,7 +134,7 @@ export default function TrolleyManager({ trolleyId }: TrolleyManagerProps) {
     </Card>
   )
 
-  async function reproducirVoz(texto) {
+  async function reproducirVoz(texto: string) {
     try {
       const res = await fetch("/api/voz", {
         method: "POST",

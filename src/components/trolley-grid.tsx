@@ -1,8 +1,18 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import type { TrolleySlot, Product } from "@/components/trolley-manager"
+import type { Product } from "@/hooks/useTrolleyProducts"
 import { motion, AnimatePresence } from "framer-motion"
+
+interface TrolleySlot {
+  id: number
+  position: string
+  status: "empty" | "correct" | "incorrect"
+  productName?: string
+  productEmoji?: string
+  placedCount?: number
+  quantity?: number
+}
 
 interface TrolleyGridProps {
   slots: TrolleySlot[]
@@ -122,7 +132,7 @@ export default function TrolleyGrid({ slots, onSlotClick, currentProduct, animat
                         }}
                         className="absolute inset-0 flex items-center justify-center text-7xl z-10 drop-shadow-2xl"
                       >
-                        {currentProduct.emoji}
+                        {currentProduct.name}
                       </motion.div>
                     )}
                   </AnimatePresence>
