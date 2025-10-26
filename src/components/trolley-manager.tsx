@@ -53,12 +53,19 @@ const initialSlots: TrolleySlot[] = Array.from({ length: 12 }, (_, i) => ({
   position: `${String.fromCharCode(65 + Math.floor(i / 3))}${(i % 3) + 1}`,
 }))
 
-export default function TrolleyManager() {
+interface TrolleyManagerProps {
+  trolleyId?: number
+}
+
+export default function TrolleyManager({ trolleyId }: TrolleyManagerProps) {
   const [slots, setSlots] = useState<TrolleySlot[]>(initialSlots)
   const [products, setProducts] = useState<Product[]>(initialProducts)
   const [currentProductIndex, setCurrentProductIndex] = useState(0)
   const [animatingSlot, setAnimatingSlot] = useState<number | null>(null)
   const [showErrorOverlay, setShowErrorOverlay] = useState(false)
+
+  // Using local data instead of API
+  console.log("🛒 Trolley Manager usando datos locales, trolleyId:", trolleyId)
 
   const currentProduct = products[currentProductIndex]
 
@@ -162,6 +169,7 @@ export default function TrolleyManager() {
         )}
       </AnimatePresence>
 
+
       {/* Header */}
       <div className="mb-6 md:mb-8">
         <div className="flex items-center justify-between">
@@ -174,9 +182,11 @@ export default function TrolleyManager() {
               <p className="text-sm text-muted-foreground">Vuelo AA-1234 • Salida: 14:30</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
-            <Camera className="w-5 h-5 text-green-500" />
-            <span className="text-sm font-medium text-green-500">Cámara Activa</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <Camera className="w-5 h-5 text-green-500" />
+              <span className="text-sm font-medium text-green-500">Cámara Activa</span>
+            </div>
           </div>
         </div>
       </div>
