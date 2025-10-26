@@ -74,7 +74,7 @@ export default function ProductChecklist({ products, currentProductIndex, onRese
                   {/* Product Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-2xl">{product.emoji}</span>
+                      <img className="text-2xl" src={product.imageUrl} alt={product.name} width={40} height={40} />
                       <div className="flex-1 min-w-0">
                         <h3
                           className={`font-semibold text-sm truncate ${

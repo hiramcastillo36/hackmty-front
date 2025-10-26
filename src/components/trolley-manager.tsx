@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { CheckCircle2, XCircle, Loader, AlertTriangle } from "lucide-react"
+import Image from "next/image";
 
 // --- Interfaces para la Simulación ---
 export interface Product {
@@ -12,7 +13,7 @@ export interface Product {
   correctSlot: number
   quantity: number
   placed: number
-  emoji: string
+  imageUrl: string
   category: string
 }
 
@@ -22,6 +23,7 @@ interface ApiItem {
   name: string
   quantity: number
   category: string
+  image: string
 }
 
 interface ApiLevel {
@@ -85,7 +87,7 @@ export default function TrolleyManager() {
             category: item.category,
             correctSlot: level.level_number,
             placed: 0,
-            emoji: getEmojiForCategory(item.category),
+            imageUrl: item.image,
           }))
         )
 
@@ -189,7 +191,13 @@ export default function TrolleyManager() {
         placementStatus === "correct" ? <CheckCircle2 size={192} /> : <XCircle size={192} />
       ) : (
         <>
-          <span className="text-9xl">{currentProduct?.emoji}</span>
+                    <Image
+            alt={currentProduct?.name || 'Product Image'}
+            src={currentProduct?.imageUrl}
+            width={256}
+            height={256}
+            className="text-9xl"
+          />
           <h2 className="mt-6 text-5xl font-bold">{currentProduct?.name}</h2>
           <p className="mt-2 text-lg text-muted-foreground">Coloca este producto en su lugar correcto.</p>
           <p className="mt-4 text-xl font-semibold">
