@@ -115,7 +115,6 @@ export default function TrolleyManager() {
       const newProducts = products.map((p) => (p.id === currentProduct.id ? { ...p, placed: newPlaced } : p))
       const updatedProduct = newProducts.find((p) => p.id === currentProduct.id)
       setProducts(newProducts)
-
       if (updatedProduct && updatedProduct.placed >= updatedProduct.quantity) {
         setTimeout(() => {
           if (currentProductIndex < products.length - 1) {
@@ -126,6 +125,8 @@ export default function TrolleyManager() {
         }, 500)
       }
     }
+    else
+      reproducirVoz("El producto no va ahí, colócalo en el estante de bebidas, por favor.");
   }
 
   useEffect(() => {
@@ -210,4 +211,23 @@ export default function TrolleyManager() {
       )}
     </Card>
   )
+
+  async function reproducirVoz(texto) {
+    try {
+      const res = await fetch("/api/voz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: texto }),
+      });
+
+      if (!res.ok) throw new Error("Error al generar voz");
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.play();
+    } catch (err) {
+      console.error(err);
+    }
+  }
 }
