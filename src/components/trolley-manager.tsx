@@ -1,278 +1,134 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Plane, CheckCircle2, XCircle, Circle, Camera } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
-import TrolleyGrid from "@/components/trolley-grid"
-import CurrentProductDisplay from "@/components/current-product-display"
+import { cn } from "@/lib/utils"
+import { CheckCircle2, XCircle, Loader, AlertTriangle } from "lucide-react"
+import Image from "next/image";
+import { useTrolleyProducts, type Product } from "@/hooks/useTrolleyProducts"
 
-export type SlotStatus = "empty" | "correct" | "incorrect"
-
-export interface TrolleySlot {
-  id: number
-  status: SlotStatus
-  productId: string | null
-  position: string
-  productName?: string
-  productEmoji?: string
-  quantity?: number
-  placedCount?: number
+interface TrolleyManagerProps {
+  trolleyId: number | string
 }
 
-export interface Product {
-  id: string
-  name: string
-  correctSlot: number
-  quantity: number
-  placed: number
-  emoji: string
-  category: string
-}
-
-const initialProducts: Product[] = [
-  { id: "P001", name: "Coca-Cola", correctSlot: 1, quantity: 12, placed: 0, emoji: "🥤", category: "Bebidas" },
-  { id: "P002", name: "Agua Mineral", correctSlot: 2, quantity: 15, placed: 0, emoji: "💧", category: "Bebidas" },
-  { id: "P003", name: "Jugo de Naranja", correctSlot: 3, quantity: 10, placed: 0, emoji: "🧃", category: "Bebidas" },
-  { id: "P004", name: "Café", correctSlot: 4, quantity: 20, placed: 0, emoji: "☕", category: "Calientes" },
-  { id: "P005", name: "Té", correctSlot: 5, quantity: 15, placed: 0, emoji: "🍵", category: "Calientes" },
-  { id: "P006", name: "Papas Fritas", correctSlot: 6, quantity: 18, placed: 0, emoji: "🍟", category: "Snacks" },
-  { id: "P007", name: "Galletas", correctSlot: 7, quantity: 20, placed: 0, emoji: "🍪", category: "Snacks" },
-  { id: "P008", name: "Chocolate", correctSlot: 8, quantity: 15, placed: 0, emoji: "🍫", category: "Snacks" },
-  { id: "P009", name: "Cacahuates", correctSlot: 9, quantity: 12, placed: 0, emoji: "🥜", category: "Snacks" },
-  { id: "P010", name: "Servilletas", correctSlot: 10, quantity: 30, placed: 0, emoji: "🧻", category: "Utensilios" },
-  { id: "P011", name: "Vasos", correctSlot: 11, quantity: 25, placed: 0, emoji: "🥤", category: "Utensilios" },
-  { id: "P012", name: "Cubiertos", correctSlot: 12, quantity: 30, placed: 0, emoji: "🍴", category: "Utensilios" },
-]
-
-const initialSlots: TrolleySlot[] = Array.from({ length: 12 }, (_, i) => ({
-  id: i + 1,
-  status: "empty",
-  productId: null,
-  position: `${String.fromCharCode(65 + Math.floor(i / 3))}${(i % 3) + 1}`,
-}))
-
-export default function TrolleyManager() {
-  const [slots, setSlots] = useState<TrolleySlot[]>(initialSlots)
-  const [products, setProducts] = useState<Product[]>(initialProducts)
+export default function TrolleyManager({ trolleyId }: TrolleyManagerProps) {
+  const { products, loading, error, updateProductPlaced, resetProducts } = useTrolleyProducts(trolleyId)
   const [currentProductIndex, setCurrentProductIndex] = useState(0)
-  const [animatingSlot, setAnimatingSlot] = useState<number | null>(null)
-  const [showErrorOverlay, setShowErrorOverlay] = useState(false)
+  const [placementStatus, setPlacementStatus] = useState<"correct" | "incorrect" | null>(null)
+  const [isComplete, setIsComplete] = useState(false)
+
+  // Resetear estado cuando cambia el trolleyId
+  useEffect(() => {
+    console.log('🔄 TrolleyManager - trolleyId cambió a:', trolleyId);
+    setCurrentProductIndex(0)
+    setPlacementStatus(null)
+    setIsComplete(false)
+  }, [trolleyId])
 
   const currentProduct = products[currentProductIndex]
 
-  const handleProductPlaced = (slotId: number, isCorrect: boolean) => {
-    const slot = slots.find((s) => s.id === slotId)
-    if (!slot || !currentProduct) return
+  const simulatePlacement = (isCorrect: boolean) => {
+    if (!currentProduct || isComplete || placementStatus) return
 
-    const newStatus: SlotStatus = isCorrect ? "correct" : "incorrect"
-    setAnimatingSlot(slotId)
+    setPlacementStatus(isCorrect ? "correct" : "incorrect")
+    setTimeout(() => setPlacementStatus(null), 400)
 
-    setSlots((prev) =>
-      prev.map((s) => {
-        if (s.id === slotId) {
-          const existingCount = s.placedCount || 0
-          return {
-            ...s,
-            status: newStatus,
-            productId: currentProduct.id,
-            productName: currentProduct.name,
-            productEmoji: currentProduct.emoji,
-            quantity: currentProduct.quantity,
-            placedCount: existingCount + 1,
+    if (isCorrect) {
+      const newPlaced = currentProduct.placed + 1
+      updateProductPlaced(currentProduct.id, newPlaced)
+
+      if (newPlaced >= currentProduct.quantity) {
+        setTimeout(() => {
+          if (currentProductIndex < products.length - 1) {
+            setCurrentProductIndex(currentProductIndex + 1)
+          } else {
+            setIsComplete(true)
           }
-        }
-        return s
-      }),
-    )
-
-    setProducts((prev) => prev.map((p) => (p.id === currentProduct.id ? { ...p, placed: p.placed + 1 } : p)))
-
-    setTimeout(() => {
-      setAnimatingSlot(null)
-    }, 800)
-
-    if (currentProduct.placed + 1 >= currentProduct.quantity) {
-      setTimeout(() => {
-        if (currentProductIndex < products.length - 1) {
-          setCurrentProductIndex(currentProductIndex + 1)
-        }
-      }, 1000)
+        }, 500)
+      }
     }
   }
 
-  const handleSlotClick = (slotId: number) => {
-    if (!currentProduct || animatingSlot || showErrorOverlay) return
-    const slot = slots.find((s) => s.id === slotId)
-    if (!slot || slot.status !== "empty") return
-
-    const isCorrect = currentProduct.correctSlot === slotId
-    if (!isCorrect) {
-      setShowErrorOverlay(true)
-      setTimeout(() => setShowErrorOverlay(false), 1500)
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "c") simulatePlacement(true)
+      else if (e.key.toLowerCase() === "i") simulatePlacement(false)
     }
-    handleProductPlaced(slotId, isCorrect)
-  }
+    window.addEventListener("keydown", handleKeyPress)
+    return () => window.removeEventListener("keydown", handleKeyPress)
+  }, [currentProduct, isComplete, placementStatus, products.length, currentProductIndex])
 
   const handleReset = () => {
-    setSlots(initialSlots)
-    setProducts(initialProducts)
+    resetProducts()
     setCurrentProductIndex(0)
-    setAnimatingSlot(null)
+    setIsComplete(false)
   }
 
-  const completedProducts = products.filter((p) => p.placed >= p.quantity).length
-  const totalProducts = products.length
-  const correctSlots = slots.filter((s) => s.status === "correct").length
-  const incorrectSlots = slots.filter((s) => s.status === "incorrect").length
-  const progress = (completedProducts / totalProducts) * 100
+  // --- Vistas de Renderizado ---
+
+  if (loading) {
+    return (
+      <Card className="w-screen h-screen rounded-none border-none flex flex-col items-center justify-center text-center">
+        <Loader className="animate-spin h-16 w-16 text-primary" />
+        <h2 className="mt-6 text-3xl font-bold">Cargando Trolley...</h2>
+        <p className="mt-2 text-lg text-muted-foreground">Conectando con la API.</p>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="w-screen h-screen rounded-none border-none flex flex-col items-center justify-center text-center bg-destructive text-destructive-foreground">
+        <AlertTriangle size={128} />
+        <h2 className="mt-6 text-4xl font-bold">Error de Conexión</h2>
+        <p className="mt-2 text-lg">{error}</p>
+      </Card>
+    )
+  }
+
+  if (isComplete) {
+    return (
+      <Card
+        className="w-screen h-screen rounded-none border-none flex flex-col items-center justify-center text-center bg-[var(--correct)] text-primary-foreground cursor-pointer"
+        onClick={handleReset}
+      >
+        <CheckCircle2 size={128} />
+        <h2 className="mt-6 text-5xl font-bold">¡Trolley Lleno!</h2>
+        <p className="mt-2 text-lg">Has completado la tarea exitosamente.</p>
+        <p className="mt-8 text-sm opacity-70">Click para reiniciar</p>
+      </Card>
+    )
+  }
 
   return (
-    <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
-      <AnimatePresence>
-        {showErrorOverlay && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-red-500/80 backdrop-blur-sm z-50 flex items-center justify-center"
-          >
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{
-                type: "spring",
-                stiffness: 260,
-                damping: 20,
-              }}
-              className="flex flex-col items-center gap-4 text-white"
-            >
-              <motion.div
-                animate={{
-                  rotate: [0, -15, 15, -15, 15, 0],
-                }}
-                transition={{ duration: 0.5, repeat: 0 }}
-              >
-                <XCircle size={128} />
-              </motion.div>
-              <h2 className="text-4xl font-bold">¡Ubicación Incorrecta!</h2>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Header */}
-      <div className="mb-6 md:mb-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
-              <Plane className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">Sistema de Llenado de Trolley</h1>
-              <p className="text-sm text-muted-foreground">Vuelo AA-1234 • Salida: 14:30</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
-            <Camera className="w-5 h-5 text-green-500" />
-            <span className="text-sm font-medium text-green-500">Cámara Activa</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Progress Bar */}
-      <Card className="mb-6 p-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium">Progreso Total</span>
-          <span className="text-sm font-bold">
-            {completedProducts}/{totalProducts} productos
-          </span>
-        </div>
-        <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-primary to-green-500 transition-all duration-500"
-            style={{ width: `${progress}%` }}
+    <Card
+      className={cn(
+        "w-screen h-screen rounded-none border-none flex flex-col items-center justify-center text-center transition-colors duration-200",
+        placementStatus === "correct" && "bg-[var(--correct)] text-primary-foreground",
+        placementStatus === "incorrect" && "bg-[var(--incorrect)] text-primary-foreground"
+      )}
+    >
+      {placementStatus ? (
+        placementStatus === "correct" ? <CheckCircle2 size={192} /> : <XCircle size={192} />
+      ) : (
+        <>
+          <Image
+            alt={currentProduct?.name || 'Product Image'}
+            src={currentProduct?.imageUrl}
+            width={256}
+            height={256}
+            className="text-9xl"
           />
-        </div>
-      </Card>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6">
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Circle className="w-4 h-4 text-[var(--empty)]" />
-            <span className="text-xs font-medium text-muted-foreground">Vacíos</span>
+          <h2 className="mt-6 text-5xl font-bold">{currentProduct?.name}</h2>
+          <p className="mt-2 text-lg text-muted-foreground">Coloca este producto en su lugar correcto.</p>
+          <p className="mt-4 text-xl font-semibold">
+            {currentProduct?.placed || 0} / {currentProduct?.quantity || 0}
+          </p>
+          <div className="absolute bottom-10 text-sm text-muted-foreground">
+            Presiona 'C' para correcto, 'I' para incorrecto.
           </div>
-          <p className="text-2xl font-bold">{slots.filter((s) => s.status === "empty").length}</p>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <CheckCircle2 className="w-4 h-4 text-[var(--correct)]" />
-            <span className="text-xs font-medium text-muted-foreground">Correctos</span>
-          </div>
-          <p className="text-2xl font-bold text-[var(--correct)]">{correctSlots}</p>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <XCircle className="w-4 h-4 text-[var(--incorrect)]" />
-            <span className="text-xs font-medium text-muted-foreground">Incorrectos</span>
-          </div>
-          <p className="text-2xl font-bold text-[var(--incorrect)]">{incorrectSlots}</p>
-        </Card>
-      </div>
-
-      {/* Main Content */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Current Product Display */}
-        <div className="lg:col-span-1">
-          <CurrentProductDisplay
-            currentProduct={currentProduct}
-            currentIndex={currentProductIndex}
-            totalProducts={totalProducts}
-            onReset={handleReset}
-          />
-        </div>
-
-        {/* Trolley Grid */}
-        <div className="lg:col-span-2">
-          <Card className="p-4 md:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Trolley - Vista Frontal</h2>
-              <Button variant="outline" size="sm" onClick={handleReset} className="text-xs bg-transparent">
-                Reiniciar
-              </Button>
-            </div>
-            <TrolleyGrid
-              slots={slots}
-              onSlotClick={handleSlotClick}
-              currentProduct={currentProduct}
-              animatingSlot={animatingSlot}
-            />
-          </Card>
-        </div>
-      </div>
-
-      {/* Legend */}
-      <Card className="mt-6 p-4">
-        <h3 className="text-sm font-semibold mb-3">Leyenda</h3>
-        <div className="flex flex-wrap gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded border-2 border-[var(--empty)] bg-[var(--empty)]/10" />
-            <span className="text-sm text-muted-foreground">Vacío / Pendiente</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded border-2 border-[var(--correct)] bg-[var(--correct)]/10" />
-            <span className="text-sm text-muted-foreground">Colocado Correctamente</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded border-2 border-[var(--incorrect)] bg-[var(--incorrect)]/10" />
-            <span className="text-sm text-muted-foreground">Colocado Incorrectamente</span>
-          </div>
-        </div>
-      </Card>
-    </div>
+        </>
+      )}
+    </Card>
   )
 }
