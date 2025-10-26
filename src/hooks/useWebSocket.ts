@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { QRData, UseWebSocketReturn, WebSocketMessage } from '@/types/qr-data';
 
-export function useWebSocket(url: string = 'ws://localhost:8000/ws/qr-data/'): UseWebSocketReturn {
+export function useWebSocket(url: string = 'ws://172.191.94.124:8000/ws/qr-data/'): UseWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [qrDataList, setQrDataList] = useState<QRData[]>([]);
   const [totalCount, setTotalCount] = useState(0);

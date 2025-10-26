@@ -2,7 +2,7 @@
  * Hook para conectar al WebSocket y recibir QR data en tiempo real
  * SIMPLIFICADO: Solo recibe mensajes del WebSocket
  * Endpoints utilizados:
- * - WebSocket: ws://localhost:8000/ws/trolley/ (qr_data_created messages)
+ * - WebSocket: ws://172.191.94.124:8000/ws/trolley/ (qr_data_created messages)
  * - REST: /api/trolleys/{id}/required-contents/ (via useTrolleyContents)
  */
 
@@ -20,7 +20,7 @@ export interface UseTrolleyWebSocketReturn {
 }
 
 export function useTrolleyWebSocket(
-  url: string = 'ws://localhost:8000/ws/qr-data/',
+  url: string = 'ws://172.191.94.124:8000/ws/qr-data/',
 ): UseTrolleyWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [lastQRData, setLastQRData] = useState<QRDataV1 | null>(null);

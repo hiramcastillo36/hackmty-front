@@ -61,7 +61,7 @@ interface UseTrolleyProductsReturn {
 
 export function useTrolleyProducts(
   trolleyId: number | string,
-  apiUrl: string = 'http://localhost:8000/api',
+  apiUrl: string = 'http://172.191.94.124:8000/api',
 ): UseTrolleyProductsReturn {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);

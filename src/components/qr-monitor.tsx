@@ -13,7 +13,7 @@ interface QRMonitorProps {
   apiUrl?: string;
 }
 
-export function QRMonitor({ wsUrl = 'ws://localhost:8000/ws/qr-data/', apiUrl = 'http://localhost:8000' }: QRMonitorProps) {
+export function QRMonitor({ wsUrl = 'ws://172.191.94.124:8000/ws/qr-data/', apiUrl = 'http://172.191.94.124:8000' }: QRMonitorProps) {
   const { isConnected, qrDataList, totalCount, lastUpdate, connect, disconnect, error } = useWebSocket(wsUrl);
 
   const [stationId, setStationId] = useState('');
