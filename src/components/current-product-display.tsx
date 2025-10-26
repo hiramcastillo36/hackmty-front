@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, Circle, Clock, RotateCcw, MapPin } from "lucide-react"
 import { motion } from "framer-motion"
-import type { Product } from "@/components/trolley-manager"
+import type { Product } from "@/hooks/useTrolleyProducts"
 
 interface ProductChecklistProps {
   products: Product[]
