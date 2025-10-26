@@ -3,147 +3,153 @@
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Package, MapPin, RotateCcw } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { CheckCircle2, Circle, Clock, RotateCcw, MapPin } from "lucide-react"
+import { motion } from "framer-motion"
 import type { Product } from "@/components/trolley-manager"
 
-interface CurrentProductDisplayProps {
-  currentProduct: Product | null
-  currentIndex: number
-  totalProducts: number
+interface ProductChecklistProps {
+  products: Product[]
+  currentProductIndex: number
   onReset: () => void
 }
 
-export default function CurrentProductDisplay({
-  currentProduct,
-  currentIndex,
-  totalProducts,
-  onReset,
-}: CurrentProductDisplayProps) {
-  if (!currentProduct) {
-    return (
-      <Card className="p-6 text-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center">
-            <Package className="w-10 h-10 text-green-500" />
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-green-500 mb-2">¡Trolley Completo!</h3>
-            <p className="text-sm text-muted-foreground mb-4">Todos los productos han sido colocados</p>
-            <Button onClick={onReset} variant="outline" className="gap-2 bg-transparent">
-              <RotateCcw className="w-4 h-4" />
-              Reiniciar
-            </Button>
-          </div>
-        </div>
-      </Card>
-    )
-  }
-
-  const progressPercent = (currentProduct.placed / currentProduct.quantity) * 100
+export default function ProductChecklist({ products, currentProductIndex, onReset }: ProductChecklistProps) {
+  const allCompleted = currentProductIndex >= products.length
 
   return (
-    <Card className="p-6 sticky top-4">
-      <div className="flex items-center justify-between mb-4">
-        <Badge variant="secondary" className="text-xs">
-          Producto {currentIndex + 1} de {totalProducts}
-        </Badge>
-        <Badge variant="outline" className="text-xs">
-          {currentProduct.category}
-        </Badge>
+    <Card className="p-4 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
+      <div className="flex items-center justify-between mb-4 pb-4 border-b">
+        <h2 className="text-lg font-semibold">Lista de Productos</h2>
+        <Button variant="outline" size="sm" onClick={onReset} className="gap-2 bg-transparent">
+          <RotateCcw className="w-3 h-3" />
+          Reiniciar
+        </Button>
       </div>
 
-      <AnimatePresence mode="wait">
+      <div className="space-y-2">
+        {products.map((product, index) => {
+          const isCompleted = product.placed >= product.quantity
+          const isCurrent = index === currentProductIndex
+          const isPending = index > currentProductIndex
+
+          return (
+            <motion.div
+              key={product.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <Card
+                className={`p-3 transition-all duration-300 ${
+                  isCurrent
+                    ? "border-2 border-blue-500 bg-blue-500/5 shadow-lg shadow-blue-500/20"
+                    : isCompleted
+                      ? "border-green-500/30 bg-green-500/5"
+                      : "border-border bg-muted/30"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  {/* Status Icon */}
+                  <div className="flex-shrink-0 mt-1">
+                    {isCompleted ? (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 200 }}
+                      >
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      </motion.div>
+                    ) : isCurrent ? (
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
+                      >
+                        <Clock className="w-5 h-5 text-blue-500" />
+                      </motion.div>
+                    ) : (
+                      <Circle className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <img className="text-2xl" src={product.imageUrl} alt={product.name} width={40} height={40} />
+                      <div className="flex-1 min-w-0">
+                        <h3
+                          className={`font-semibold text-sm truncate ${
+                            isCurrent ? "text-blue-500" : isCompleted ? "text-green-500" : "text-foreground"
+                          }`}
+                        >
+                          {product.name}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
+                            {product.category}
+                          </Badge>
+                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <MapPin className="w-3 h-3" />
+                            <span>Pos. {product.correctSlot}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-muted-foreground">Cantidad</span>
+                        <span
+                          className={`font-bold ${
+                            isCompleted ? "text-green-500" : isCurrent ? "text-blue-500" : "text-muted-foreground"
+                          }`}
+                        >
+                          {product.placed}/{product.quantity}
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                        <motion.div
+                          className={`h-full ${
+                            isCompleted ? "bg-green-500" : isCurrent ? "bg-blue-500" : "bg-muted-foreground/30"
+                          }`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(product.placed / product.quantity) * 100}%` }}
+                          transition={{ duration: 0.5 }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Current Product Indicator */}
+                    {isCurrent && !isCompleted && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-2 text-xs font-medium text-blue-500 flex items-center gap-1"
+                      >
+                        <span className="inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                        En progreso
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          )
+        })}
+      </div>
+
+      {/* Completion Message */}
+      {allCompleted && (
         <motion.div
-          key={currentProduct.id}
-          initial={{ opacity: 0, scale: 0.8, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.8, y: -20 }}
-          transition={{ duration: 0.3 }}
-          className="space-y-6"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="mt-4 p-4 bg-green-500/10 border-2 border-green-500/30 rounded-lg text-center"
         >
-          {/* Product Icon */}
-          <div className="flex justify-center">
-            <motion.div
-              animate={{
-                scale: [1, 1.1, 1],
-                rotate: [0, 5, -5, 0],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Number.POSITIVE_INFINITY,
-                repeatType: "reverse",
-              }}
-              className="text-9xl"
-            >
-              {currentProduct.emoji}
-            </motion.div>
-          </div>
-
-          {/* Product Name */}
-          <div className="text-center">
-            <h2 className="text-3xl font-bold mb-2">{currentProduct.name}</h2>
-            <p className="text-sm text-muted-foreground">Coloca este producto en el trolley</p>
-          </div>
-
-          {/* Quantity Display */}
-          <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Cantidad a colocar</span>
-              <span className="text-2xl font-bold text-primary">
-                {currentProduct.placed}/{currentProduct.quantity}
-              </span>
-            </div>
-            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-primary"
-                initial={{ width: 0 }}
-                animate={{ width: `${progressPercent}%` }}
-                transition={{ duration: 0.5 }}
-              />
-            </div>
-          </div>
-
-          {/* Position Indicator */}
-          <div className="bg-blue-500/10 rounded-lg p-4 border-2 border-blue-500/30">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-blue-500/20">
-                <MapPin className="w-6 h-6 text-blue-500" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-muted-foreground mb-1">Posición correcta</p>
-                <p className="text-2xl font-bold text-blue-500">Compartimento {currentProduct.correctSlot}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Instructions */}
-          <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
-            <ArrowRight className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-            <div className="text-sm">
-              <p className="font-medium mb-1">Instrucciones:</p>
-              <p className="text-muted-foreground">
-                Coloca <span className="font-bold text-foreground">{currentProduct.quantity}</span> unidades de{" "}
-                <span className="font-bold text-foreground">{currentProduct.name}</span> en el compartimento{" "}
-                <span className="font-bold text-foreground">{currentProduct.correctSlot}</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Remaining Items */}
-          {currentProduct.placed < currentProduct.quantity && (
-            <motion.div
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
-              className="text-center p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg"
-            >
-              <p className="text-sm font-medium text-yellow-700 dark:text-yellow-500">
-                Faltan {currentProduct.quantity - currentProduct.placed} unidades
-              </p>
-            </motion.div>
-          )}
+          <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" />
+          <p className="font-bold text-green-500">¡Trolley Completo!</p>
+          <p className="text-xs text-muted-foreground mt-1">Todos los productos han sido colocados</p>
         </motion.div>
-      </AnimatePresence>
+      )}
     </Card>
   )
 }
